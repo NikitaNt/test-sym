@@ -1,14 +1,8 @@
 aws:
     version: latest
-    region: us-east-1
+    region: eu-north-1
     credentials:
         key: "%env(AWS_KEY)%"
         secret: "%env(AWS_SECRET)%"
-    DynamoDb:
-        region: us-west-2
     S3:
-        version: '2006-03-01'
-    Sqs:
-        credentials: "@aws_s3_service"
-    CloudSearchDomain:
-        endpoint: https://search-with-some-subdomain.us-east-1.cloudsearch.amazonaws.com"
+        version: 'latest'

@@ -1,35 +1,20 @@
 <?php
-namespace App\Services;
 
+namespace App\Service;
+
+use App\Service\Abstraction\AbstractAwsS3;
+use App\Service\Abstraction\AwsS3Interface;
 use Aws\S3\S3Client;
+use phpDocumentor\Reflection\Types\Mixed_;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Class AmazonS3Service
  *
  * @package Acme\DemoBundle\Service
  */
-class AwsS3Service
+class AwsS3Service extends AbstractAwsS3
 {
-    /**
-     * @var S3Client
-     */
-    private $client;
-
-    /**
-     * @var string
-     */
-    private $bucket;
-
-    /**
-     * @param string $bucket
-     * @param array  $s3arguments
-     */
-    public function __construct($bucket, array $s3arguments)
-    {
-        $this->setBucket($bucket);
-        $this->setClient(new S3Client($s3arguments));
-    }
-
     /**
      * @param string $fileName
      * @param string $content
@@ -37,11 +22,15 @@ class AwsS3Service
      * @param string $privacy
      * @return string file url
      */
-    public function upload( $fileName, $content, array $meta = [], $privacy = 'public-read')
+    public function upload( $fileName, $content, array $meta = [], $privacy = 'private')
     {
-        return $this->getClient()->upload($this->getBucket(), $fileName, $content, $privacy, [
-            'Metadata' => $meta
-        ])->toArray()['ObjectURL'];
+        if ($this->isBucketExists()) {
+            return $this->getClient()->upload($this->getBucket(), $fileName, $content, $privacy, [
+                'Metadata' => $meta
+            ])->toArray()['ObjectURL'];
+        } else {
+            throw new NotFoundHttpException(sprintf('%s - bucket is not exists', $this->getBucket()));
+        }
     }
 
     /**
@@ -51,7 +40,9 @@ class AwsS3Service
      * @param string       $privacy
      * @return string file url
      */
-    public function uploadFile($fileName, $newFilename = null, array $meta = [], $privacy = 'public-read') {
+    public function uploadFile($fileName, $newFilename = null, array $meta = [], $privacy = 'private') {
+        $fileName = self::PUBLIC_PATH . self::IMAGE_PATH . $fileName;
+
         if(!$newFilename) {
             $newFilename = basename($fileName);
         }
@@ -64,53 +55,5 @@ class AwsS3Service
         }
 
         return $this->upload($newFilename, file_get_contents($fileName), $meta, $privacy);
-    }
-
-    /**
-     * Getter of client
-     *
-     * @return S3Client
-     */
-    protected function getClient()
-    {
-        return $this->client;
-    }
-
-    /**
-     * Setter of client
-     *
-     * @param S3Client $client
-     *
-     * @return $this
-     */
-    private function setClient(S3Client $client)
-    {
-        $this->client = $client;
-
-        return $this;
-    }
-
-    /**
-     * Getter of bucket
-     *
-     * @return string
-     */
-    protected function getBucket()
-    {
-        return $this->bucket;
-    }
-
-    /**
-     * Setter of bucket
-     *
-     * @param string $bucket
-     *
-     * @return $this
-     */
-    private function setBucket($bucket)
-    {
-        $this->bucket = $bucket;
-
-        return $this;
     }
 }
